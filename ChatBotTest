@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chatbot con Google Sheets</title>
+
+    <style>
+        /* Estilos CSS actuales */
+
+        #random-keyword {
+            padding: 20px 83px;
+            margin-right: 5px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            background-color: #3498db; /* Color de fondo del botón */
+            color: white; /* Color del texto del botón */
+        }
+
+        body {
+            background-color: #1a1a1a; /* Color de fondo oscuro por defecto */
+            color: white; /* Color del texto blanco por defecto */
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            margin: 0;
+            font-family: Arial, sans-serif; /* Fuente del texto */
+            font-size: 12px; /* Tamaño de fuente global */
+            transition: background-color 0.5s, color 0.5s; /* Agregado para suavizar la transición del tema */
+        }
+
+        body.light-theme {
+            background-color: #f0f0f0; /* Color de fondo claro cuando está activado el tema claro */
+            color: #000000; /* Color del texto oscuro cuando está activado el tema claro */
+        }
+
+        body.unicorn-theme {
+            background: linear-gradient(to right, #FF9A8B, #FF6A88, #FF99AC, #FF607E); /* Fondo estilo unicornio */
+            color: #fff; /* Texto en tema unicornio */
+        }
+
+        #chat-container {
+            background-color: #000000; /* Color de fondo oscuro del contenedor del chat por defecto */
+            padding: 20px;
+            border-radius: 10px;
+            width: 90%; /* Ancho del contenedor del chat */
+            max-width: 1800px; /* Ancho máximo del contenedor del chat */
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.5); /* Sombra para el contenedor del chat */
+            position: relative;
+            transition: background-color 0.5s; /* Agregado para suavizar la transición del tema en el contenedor del chat */
+            max-height: 800px; /* Límite de altura del contenedor del chat */
+            overflow-y: auto; /* Agregado para permitir el scroll vertical */
+            flex-grow: 1;
+            margin-top: 10px; /* Nuevo margen superior */
+            margin-left: 10px; /* Nuevo margen izquierdo */
+        }
+
+        .message-container {
+            margin-bottom: 10px;
+            overflow: hidden; /* Asegura que los bordes redondeados no se desborden */
+        }
+
+        .user-message {
+            color: #000000; /* Color del texto del globo de chat del usuario */
+            background-color: #6495ED; /* Nuevo color azul suave del globo de chat del usuario */
+            border-radius: 10px;
+            padding: 10px;
+            text-align: right; /* Alinea los mensajes del usuario a la derecha */
+            float: right; /* Alinea a la derecha */
+        }
+
+        .bot-message {
+            color: #333; /* Color del texto del globo de chat del bot */
+            background-color: #98FB98; /* Nuevo color verde suave del globo de chat del bot */
+            border-radius: 10px;
+            padding: 10px;
+            text-align: left; /* Alinea los mensajes del bot a la izquierda */
+            float: left; /* Alinea a la izquierda */
+        }
+
+        .user-message.unicorn-theme {
+            background-color: #FFD700; /* Nuevo color dorado suave del globo de chat del usuario en tema unicornio */
+        }
+
+        .bot-message.unicorn-theme {
+            background-color: #ff5eaf; /* Nuevo color rosa suave del globo de chat del bot en tema unicornio */
+        }
+
+        #user-input-container {
+            display: flex;
+            align-items: center;
+            margin-top: 10px; /* Separación entre el chat y el área de entrada del usuario */
+        }
+
+        #user-input {
+            width: 70%;
+            padding: 20px;
+            margin-right: 5px;
+            border: 1px solid #666; /* Borde del campo de entrada del usuario */
+            border-radius: 5px;
+        }
+
+        button {
+            padding: 20px 10px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        button.light-theme {
+            background-color: #4CAF50; /* Color de fondo del botón en tema claro */
+            color: white; /* Color del texto del botón en tema claro */
+        }
+
+        button.unicorn-theme {
+            background: linear-gradient(to right, #FF9A8B, #FF6A88, #FF99AC, #FF607E); /* Color de fondo del botón en tema unicornio */
+            color: #fff; /* Color del texto del botón en tema unicornio */
+        }
+
+        #theme-switch {
+            align-self: flex-end;
+            margin-top: 3px;
+        }
+
+        .bold {
+            font-weight: bold;
+        }
+
+        .italic {
+            font-style: italic;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="chat-container">
+        <div id="chat-log"></div>
+    </div>
+    <div id="user-input-container">
+        <input type="text" id="user-input" placeholder="Escribe tu mensaje..." onkeyup="handleKeyPress(event)">
+        <button class="light-theme" onclick="sendMessage()">Enviar</button>
+        <button id="theme-switch" onclick="toggleTheme()">Cambiar Tema</button>
+        <button id="random-keyword" onclick="generateRandomKeyword()">Aleatorio</button>
+    </div>
+
+    <script>
+        // Funciones JavaScript actuales
+
+        function generateRandomKeyword() {
+            // Palabras clave en la Columna A (reemplázalas con tus propias palabras)
+            const keywords = ['Alojamiento', 'Excursiones', 'Cerros', 'Colectivos urbanos', 'Gastronomía', 'Miradores', 'Museos', 'Playas', 'Paradas', 'Eventos', 'Nieve', 'Playón Municipal', 'Parapente', 'Paseo con Auto', 'Paseo de la costa', 'Termas de Puyehue', 'Ski', 'Spa', 'SUBE', 'Taxi', 'Teléfonos', 'Terminal de Colectivos', 'Terminal de Tren', 'Tiempo', 'Trekking', 'Turismo Rural', 'Valle Encantado', 'Vegano', 'Kayak', 'Lagunas', 'Lavaderos', 'Lista terminal', 'Lluvia', 'Mapas', 'Mascotas', 'Mitos', 'Plaza', 'Rafting', 'Refugio Neumeyer', 'Resumen', 'Rosa Mosqueta', 'Ruinas de Tacul', 'Skate Park', 'Sin Tacc', 'Pizzerías', 'Isla Huemul', 'Isla Victoria', 'Hoteles', 'Hisopado PCR', 'Guardavidas', 'Guarda equipaje', 'Gruta Virgen de la Nieve', 'Gratis', 'Gastronomía', 'Folletería', 'Fiesta de la Nieve', 'Ferias Artesanales', 'Fauna', 'Excursiones', 'Estado de las rutas', 'Escape Room', 'Entretenimiento', 'Eco tasa', 'Cumpleaños de Bariloche', 'Cruce Andino', 'Consulados', 'Colonia Suiza', 'Colectivos de larga distancia', 'Buitrera', 'Buceo', 'Bicicleta', 'Biblioteca', 'Bar de Hielo', 'Bahía López', 'Brazo Tristeza', 'Bariloche Beer Experience', 'Arcuva VP', 'Anfiteatro', 'Alquiler de Auto', 'Alquiler de Motos', 'Ahumaderos', 'AeroBolson', 'AeroAngostura', 'Aeroclub', 'Aeropuerto'];
+
+            // Selecciona aleatoriamente una palabra clave
+            const randomKeyword = keywords[Math.floor(Math.random() * keywords.length)];
+
+            // Coloca la palabra clave en el campo de entrada
+            document.getElementById('user-input').value = randomKeyword;
+        }
+
+        function sendMessage() {
+            const userMessage = document.getElementById('user-input').value;
+
+            // Muestra el mensaje del usuario inmediatamente con la clase unicorn-theme si el tema unicornio está activado
+            appendToChatLog(`<div class="message-container"><div class="user-message ${document.body.classList.contains('unicorn-theme') ? 'unicorn-theme' : ''}"><span class="bold">Usuario:</span> ${userMessage}</div></div>`);
+
+            // Envía el mensaje del usuario al servidor Node.js
+            fetch('http://localhost:3000/webhook', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ message: userMessage }),
+            })
+                .then(response => response.json())
+                .then(data => {
+                    // Maneja la respuesta del servidor (respuesta del chatbot)
+                    const botResponse = data.botResponse;
+                    // Agrega la respuesta del bot al chat
+                    appendToChatLog(`<div class="message-container"><div class="bot-message ${document.body.classList.contains('unicorn-theme') ? 'unicorn-theme' : ''}"><span class="bold">Bot:</span> ${formatBotResponse(botResponse)}</div></div>`);
+                })
+                .catch(error => console.error('Error al enviar mensaje al servidor:', error));
+
+            // Limpia el campo de entrada del usuario
+            document.getElementById('user-input').value = '';
+        }
+
+        function appendToChatLog(message) {
+            const chatLog = document.getElementById('chat-log');
+
+            // Agrega la clase unicorn-theme a las burbujas de chat si el tema unicornio está activado
+            const isUnicornTheme = document.body.classList.contains('unicorn-theme');
+            const messageWithTheme = isUnicornTheme ? message.replace('message-container', 'message-container unicorn-theme') : message;
+
+            chatLog.innerHTML += messageWithTheme;
+
+            // Desplaza el scroll hacia abajo para mostrar el nuevo mensaje
+            chatLog.scrollTop = chatLog.scrollHeight;
+        }
+
+        function toggleTheme() {
+            const body = document.body;
+            const chatContainer = document.getElementById('chat-container');
+            const buttons = document.querySelectorAll('button');
+
+            body.classList.toggle('light-theme');
+            body.classList.toggle('unicorn-theme');
+            chatContainer.style.backgroundColor = getComputedStyle(chatContainer).backgroundColor === 'rgb(51, 51, 51)' ? '#f0f0f0' : '#333';
+
+            buttons.forEach(button => {
+                button.classList.toggle('light-theme');
+                button.classList.toggle('unicorn-theme');
+            });
+        }
+
+        function formatBotResponse(response) {
+            // Aplica formato a las respuestas del bot según el formato en Google Sheets
+            return response.replace(/\*([^*]+)\*/g, '<span class="bold">$1</span>').replace(/```([^`]+)```/g, '<span class="italic">$1</span>');
+        }
+
+        function handleKeyPress(event) {
+            if (event.key === 'Enter') {
+                sendMessage();
+            }
+        }
+    </script>
+</body>
+
+</html>
